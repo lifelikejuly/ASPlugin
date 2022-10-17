@@ -7,7 +7,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.WindowManager;
 import com.vdian.wddevplugin.tools.finduseless.FindUselessUtils;
 import com.vdian.wddevplugin.tools.finduseless.OutPutInfo;
-import com.vdian.wddevplugin.tools.finduseless.ui.DelectFileDialog;
 import com.vdian.wddevplugin.ui.checkboxtrees.CheckBoxTreeCellRenderer;
 import com.vdian.wddevplugin.ui.checkboxtrees.CheckBoxTreeNode;
 import com.vdian.wddevplugin.utils.FileUtils;
@@ -38,6 +37,7 @@ public class FindUselessDialog extends JDialog {
     private JButton buttonCancel;
     private JList<OutPutInfo> outputInfoList;
     private JTree dirTree;
+    private JButton deleteAll;
     private DefaultListModel<OutPutInfo> infoOutPutList;
 
 
@@ -65,6 +65,13 @@ public class FindUselessDialog extends JDialog {
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
+            }
+        });
+        deleteAll.setVisible(false);
+        deleteAll.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                DeleteAllFilesDialog.showDeleteAllFilesDialog(findResFiles);
             }
         });
 
@@ -154,10 +161,6 @@ public class FindUselessDialog extends JDialog {
 
 
 
-
-
-
-
     private void loopProjectDir() {
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -180,8 +183,9 @@ public class FindUselessDialog extends JDialog {
                                 FindUselessUtils.loopVirtualDir(ignoreDirs, childFile, findResFiles, new FindUselessUtils.LoopCallback() {
                                     @Override
                                     public void callbackUsefulFile(File f, OutPutInfo outPutInfo) {
-                                        usefulFiles.add(f);
-                                        infoOutPutList.addElement(outPutInfo);
+                                        if(f != null)
+                                            usefulFiles.add(f);
+//                                        infoOutPutList.addElement(outPutInfo);
                                     }
                                 });
                             }
@@ -193,7 +197,7 @@ public class FindUselessDialog extends JDialog {
                     @Override
                     public void callbackUsefulFile(File f, OutPutInfo outPutInfo) {
                         usefulFiles.add(f);
-                        infoOutPutList.addElement(outPutInfo);
+//                        infoOutPutList.addElement(outPutInfo);
                     }
                 });
 
@@ -226,6 +230,8 @@ public class FindUselessDialog extends JDialog {
                 info.append(FileUtils.formatFileSize(fileSize));
                 info.append("】");
                 infoOutPutList.addElement(new OutPutInfo(info.toString()));
+
+                deleteAll.setVisible(findResFiles != null && findResFiles.size() > 0);
             }
         });
         thread.run();
@@ -251,9 +257,8 @@ public class FindUselessDialog extends JDialog {
             }));
         }
         // 开始查询
-        infoOutPutList.addElement( new OutPutInfo(new StringBuilder().append("*************\n")
-                .append("* ")
-                .append("开始查询资源文件操作 *\n")
+        infoOutPutList.addElement( new OutPutInfo(new StringBuilder().append("*************")
+                .append("开始查询资源文件操作")
                 .append("*************").toString()));
         long fileSize = 0;
         for (File file : findResFiles) {
@@ -269,8 +274,8 @@ public class FindUselessDialog extends JDialog {
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("*************\n");
-        info.append("* 查询资源结束 ---->>>> 统计结果:[")
+        info.append("*************");
+        info.append("查询资源结束 ---->>>> 统计结果:[")
                 .append("文件总数:")
                 .append(findResFiles.size())
                 .append("] ")
@@ -278,7 +283,6 @@ public class FindUselessDialog extends JDialog {
                 .append("文件总大小:")
                 .append(FileUtils.formatFileSize(fileSize))
                 .append("]");
-        info.append(" *\n");
         info.append("*************");
         infoOutPutList.addElement( new OutPutInfo(info.toString()));
         infoOutPutList.addElement( new OutPutInfo("*************"));

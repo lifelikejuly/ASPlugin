@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.vdian.wddevplugin.ui.checkboxtrees.CheckBoxTreeNode;
+import com.vdian.wddevplugin.ui.error.ErrorDialog;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -97,13 +98,18 @@ public class FindUselessUtils {
                 }
         } else {
             if (file.getName().startsWith(".") ||
-                    file.getName().endsWith(".apk") ||
-                    file.getFileType().getName() != "PLAIN_TEXT")
+                    file.getName().endsWith(".apk")
+//                    || file.getFileType().getName() != "PLAIN_TEXT"
+            ){
                 return;
+            }
+
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()));
                 String currentLine;
                 while ((currentLine = br.readLine()) != null) {
+                    currentLine = currentLine.trim();
+                    if(currentLine.startsWith("//")) continue; //
                     for (File f : findResFiles) {
                         if (currentLine.contains(f.getName())) {
                             StringBuilder stringBuilder = new StringBuilder();
@@ -120,6 +126,7 @@ public class FindUselessUtils {
                     }
                 }
             } catch (IOException e1) {
+                ErrorDialog.showErrorDialog(e1.getMessage());
                 e1.printStackTrace();
             }
         }
