@@ -1,0 +1,36 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.vdian.WDDevPlugin</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>WDDevPlugin</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="yuhaocan@126.com" url="https://github.com/yuhaocan">JulyYu</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description>"This is VD Company Develop Tools.It's now SNAPSHOT Version support less Function."</description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+
+    </extensions>
+
+    <actions>
+        <group id="VDDevToolsGroup" class="com.vdian.wddevplugin.actions.VDDevToolsGroup" popup="true" text="VDTools" description="Dev Tools">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </group>
+        <action id="VDFindUselessAction" class="com.vdian.wddevplugin.actions.VDFindUselessAction" text="FindUselessRes" description="test">
+            <add-to-group group-id="VDDevToolsGroup" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>
