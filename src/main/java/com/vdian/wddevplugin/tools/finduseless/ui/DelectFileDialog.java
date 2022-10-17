@@ -9,6 +9,7 @@ public class DelectFileDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JLabel textContent;
+    private JLabel image;
 
     private File file;
 
@@ -33,6 +34,11 @@ public class DelectFileDialog extends JDialog {
         stringBuilder.append("确定删除文件 -> ");
         stringBuilder.append(file.getName());
         textContent.setText(stringBuilder.toString());
+        try {
+            image.setIcon(new ImageIcon(file.getAbsolutePath()));
+        }catch (Exception e){
+
+        }
         // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -48,7 +54,7 @@ public class DelectFileDialog extends JDialog {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-        setSize(200, 300);
+        setSize(600, 300);
         setLocationRelativeTo(null);
     }
 
