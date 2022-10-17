@@ -78,10 +78,12 @@ public class DeleteAllFilesDialog extends JDialog {
 
     private void onOK() {
         try {
+
             Enumeration<File> fileEnumeration = fileModel.elements();
-            File file = fileEnumeration.nextElement();
-            while (file != null){
-                file.delete();
+
+            while (fileEnumeration.hasMoreElements()){
+                File file = fileEnumeration.nextElement();
+                if (file != null && file.exists()) file.delete();
             }
         }catch (Exception e){
 
