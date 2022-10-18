@@ -9,8 +9,11 @@ import com.vdian.wddevplugin.ui.error.ErrorDialog;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FindUselessUtils {
 
@@ -43,16 +46,16 @@ public class FindUselessUtils {
         }
     }
 
-    public static List<File> findFileRes(File file, LoopFileCallback callback) {
+    public static List<ResFileInfo> findFileRes(File file, LoopFileCallback callback) {
         // 循环文件
-        List<File> files = new ArrayList<>();
+        List<ResFileInfo> files = new ArrayList<>();
         if (file != null && file.isDirectory()) {
             files.addAll(loopDir(file.listFiles(), callback));
             return files;
         } else if (file != null &&
                 !file.getName().startsWith(".") &&
                 file.isFile()) {
-            files.add(file);
+            files.add(new ResFileInfo(file));
             try {
                 String mimeType = Files.probeContentType(file.toPath());
                 if (mimeType.startsWith("application") && callback != null) {
@@ -67,9 +70,9 @@ public class FindUselessUtils {
         return new ArrayList<>();
     }
 
-    private static List<File> loopDir(File[] files, LoopFileCallback callback) {
+    private static List<ResFileInfo> loopDir(File[] files, LoopFileCallback callback) {
         // 循环目录
-        List<File> res = new ArrayList<>();
+        List<ResFileInfo> res = new ArrayList<>();
         if (files != null && files.length > 0) {
             for (File file : files) {
                 res.addAll(findFileRes(file, callback));
@@ -79,7 +82,7 @@ public class FindUselessUtils {
     }
 
 
-    public static void loopVirtualDir(List<String> ignoreDirs, VirtualFile file, List<File> findResFiles, LoopCallback loopCallback) {
+    public static void loopVirtualDir(List<String> ignoreDirs, VirtualFile file, List<ResFileInfo> findResFiles, LoopCallback loopCallback) {
         if (file == null) return;
         if (file.isDirectory()) {
             boolean isIgnore = false;
@@ -100,7 +103,7 @@ public class FindUselessUtils {
             if (file.getName().startsWith(".") ||
                     file.getName().endsWith(".apk")
 //                    || file.getFileType().getName() != "PLAIN_TEXT"
-            ){
+            ) {
                 return;
             }
 
@@ -109,12 +112,12 @@ public class FindUselessUtils {
                 String currentLine;
                 while ((currentLine = br.readLine()) != null) {
                     currentLine = currentLine.trim();
-                    if(currentLine.startsWith("//")) continue; //
-                    for (File f : findResFiles) {
-                        if (currentLine.contains(f.getName())) {
+                    if (currentLine.startsWith("//")) continue; //
+                    for (ResFileInfo f : findResFiles) {
+                        if (containText(currentLine, f.getName())) {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("查询到[")
-                                    .append(f.getPath())
+                                    .append(f.resFile.getPath())
                                     .append("]")
                                     .append("有在 >>>>>>> [")
                                     .append(file.getPath())
@@ -133,7 +136,7 @@ public class FindUselessUtils {
     }
 
 
-    public static void loopTextFiles(List<File> textFiles, List<File> findResFiles, LoopCallback loopCallback) {
+    public static void loopTextFiles(List<File> textFiles, List<ResFileInfo> findResFiles, LoopCallback loopCallback) {
         for (File textFile : textFiles) {
             try {
                 FileInputStream fis = null;
@@ -142,15 +145,15 @@ public class FindUselessUtils {
                 String currentLine;
                 while ((currentLine = br.readLine()) != null) {
                     currentLine = currentLine.trim();
-                    if(currentLine.startsWith("//")) continue; // 忽略注释行
-                    for (File f : findResFiles) {
-                        if (currentLine.contains(f.getName())) {
+                    if (currentLine.startsWith("//")) continue; // 忽略注释行
+                    for (ResFileInfo f : findResFiles) {
+                        if (containText(currentLine, f.getName())) {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("查询到[")
-                                    .append(f.getPath())
+                                    .append(f.resFile.getPath())
                                     .append("]")
                                     .append("有在 >>>>>>> [")
-                                    .append(f.getPath())
+                                    .append(textFile.getPath())
                                     .append("]")
                                     .append("文件中使用");
                             if (loopCallback != null)
@@ -167,8 +170,30 @@ public class FindUselessUtils {
         }
     }
 
+    static Pattern pattern = Pattern.compile("\\d+$");
+
+    public static String returnNumEndName(String name) {
+        String[] splits = name.split("\\.");
+        if (splits.length == 2) {
+            String headText = splits[0];
+            Matcher matcher = pattern.matcher(headText);
+            if (matcher.find()) {
+                headText = headText.substring(0, headText.length() - matcher.group().length());
+                return headText;
+            }
+            return name;
+
+        }
+        return name;
+
+    }
+
+    private static boolean containText(String textLine, String name) {
+        return textLine.contains(name);
+    }
+
     public interface LoopCallback {
-        void callbackUsefulFile(File f, OutPutInfo outPutInfo);
+        void callbackUsefulFile(ResFileInfo f, OutPutInfo outPutInfo);
     }
 
     public interface LoopFileCallback {

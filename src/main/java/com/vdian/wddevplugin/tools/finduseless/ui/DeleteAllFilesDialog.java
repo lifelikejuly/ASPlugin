@@ -1,6 +1,7 @@
 package com.vdian.wddevplugin.tools.finduseless.ui;
 
 import com.vdian.wddevplugin.tools.finduseless.OutPutInfo;
+import com.vdian.wddevplugin.tools.finduseless.ResFileInfo;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,10 +14,10 @@ public class DeleteAllFilesDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JList<File> fileList;
-    private DefaultListModel<File> fileModel;
+    private JList<ResFileInfo> fileList;
+    private DefaultListModel<ResFileInfo> fileModel;
 
-    public DeleteAllFilesDialog(java.util.List<File> files) {
+    public DeleteAllFilesDialog(java.util.List<ResFileInfo> files) {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -64,7 +65,7 @@ public class DeleteAllFilesDialog extends JDialog {
             @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                File file = (File) value;
+                File file = ((ResFileInfo) value).getResFile();
                 try {
                     setIcon(new ImageIcon(file.getAbsolutePath()));
                 }catch (Exception e){
@@ -79,10 +80,10 @@ public class DeleteAllFilesDialog extends JDialog {
     private void onOK() {
         try {
 
-            Enumeration<File> fileEnumeration = fileModel.elements();
+            Enumeration<ResFileInfo> fileEnumeration = fileModel.elements();
 
             while (fileEnumeration.hasMoreElements()){
-                File file = fileEnumeration.nextElement();
+                File file = fileEnumeration.nextElement().getResFile();
                 if (file != null && file.exists()) file.delete();
             }
         }catch (Exception e){
@@ -96,7 +97,7 @@ public class DeleteAllFilesDialog extends JDialog {
         dispose();
     }
 
-    public static void showDeleteAllFilesDialog(List<File> fileList) {
+    public static void showDeleteAllFilesDialog(List<ResFileInfo> fileList) {
         DeleteAllFilesDialog dialog = new DeleteAllFilesDialog(fileList);
         dialog.setVisible(true);
     }

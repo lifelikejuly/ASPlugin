@@ -1,5 +1,6 @@
 package com.vdian.wddevplugin.tools.finduseless.ui;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -7,6 +8,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.WindowManager;
 import com.vdian.wddevplugin.tools.finduseless.FindUselessUtils;
 import com.vdian.wddevplugin.tools.finduseless.OutPutInfo;
+import com.vdian.wddevplugin.tools.finduseless.ResFileInfo;
 import com.vdian.wddevplugin.ui.checkboxtrees.CheckBoxTreeCellRenderer;
 import com.vdian.wddevplugin.ui.checkboxtrees.CheckBoxTreeNode;
 import com.vdian.wddevplugin.utils.FileUtils;
@@ -36,18 +38,23 @@ public class FindUselessDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JList<OutPutInfo> outputInfoList;
-    private JTree dirTree;
+
     private JButton deleteAll;
+
     private DefaultListModel<OutPutInfo> infoOutPutList;
 
+    private JTree findDirTree;
+    private DefaultTreeModel findTreeModel;
+    private CheckBoxTreeNode findRootNode;
 
+    private JTree dirTree;
     private DefaultTreeModel dirTreeModel;
     private CheckBoxTreeNode rootNode;
 
     private Project activeProject;
 
-    private List<File> findResFiles = new ArrayList<>();
-    private Set<File> usefulFiles = new HashSet<>();
+    private List<ResFileInfo> findResFiles = new ArrayList<>();
+    private Set<ResFileInfo> usefulFiles = new HashSet<>();
     private List<File> resTextFiles = new ArrayList<>();
 
 
@@ -106,12 +113,11 @@ public class FindUselessDialog extends JDialog {
                 JList<OutPutInfo> list = (JList) e.getSource();
                 OutPutInfo outPutInfo = list.getSelectedValue();
                 File file = outPutInfo.getFile();
-                if(file != null){
+                if (file != null) {
                     DelectFileDialog.showDeleteFileDialog(file);
                 }
             }
         });
-
 
 
         // 目录列表
@@ -139,9 +145,33 @@ public class FindUselessDialog extends JDialog {
         rootNode = new CheckBoxTreeNode();
         dirTreeModel = new DefaultTreeModel(rootNode);
         dirTree.setModel(dirTreeModel);
-        FindUselessUtils.loopDirTrees(rootNode,activeProject,ignoreDirs);
+        FindUselessUtils.loopDirTrees(rootNode, activeProject, ignoreDirs);
 
+        // 查询范围目录列表
+        findDirTree.addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                JTree tree = (JTree) e.getSource();
+                TreePath path = tree.getSelectionPath();
+                if (path != null) {
+                    CheckBoxTreeNode node = (CheckBoxTreeNode) path.getLastPathComponent();
+                    if (node != null) {
+                        boolean isSelected = !node.isSelected();
+                        node.setSelected(isSelected);
+                        ((DefaultTreeModel) tree.getModel()).nodeStructureChanged(node);
+                    }
+                }
+                tree.removeSelectionPath(path);
+            }
+        });
+        findDirTree.setCellRenderer(new CheckBoxTreeCellRenderer());
+        findDirTree.setShowsRootHandles(true);
+        activeProject = ProjectUtils.findProjectDir();
 
+        findRootNode = new CheckBoxTreeNode();
+        findTreeModel = new DefaultTreeModel(findRootNode);
+        findDirTree.setModel(findTreeModel);
+        FindUselessUtils.loopDirTrees(findRootNode, activeProject, ignoreDirs);
     }
 
 
@@ -158,139 +188,121 @@ public class FindUselessDialog extends JDialog {
     }
 
 
-
-
-
     private void loopProjectDir() {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Project[] projects = ProjectManager.getInstance().getOpenProjects();
-                if (projects != null && projects.length > 0) {
-                    Project activeProject = projects[0];
-                    for (Project project : projects) {
-                        Window window = WindowManager.getInstance().suggestParentWindow(project);
-                        if (window != null && window.isActive()) {
-                            activeProject = project;
+        {
+
+            List<VirtualFile> selectedDirs = findRootNode.getCheckParentsNode();
+            for (VirtualFile virtualFile : selectedDirs) {
+                for (VirtualFile childFile : virtualFile.getChildren()) {
+                    if (childFile.getName().startsWith(".") || List.of(ignoreDirs).contains(childFile.getName()))
+                        continue;
+                    FindUselessUtils.loopVirtualDir(ignoreDirs, childFile, findResFiles, new FindUselessUtils.LoopCallback() {
+                        @Override
+                        public void callbackUsefulFile(ResFileInfo f, OutPutInfo outPutInfo) {
+                            if (f != null)
+                                usefulFiles.add(f);
                         }
-                    }
-                    if (activeProject != null) {
-                        VirtualFile[] virtualFiles = ProjectRootManager.getInstance(activeProject).getContentRoots();
-                        for (VirtualFile virtualFile : virtualFiles) {
-                            for (VirtualFile childFile : virtualFile.getChildren()) {
-                                if (childFile.getName().startsWith(".") || List.of(ignoreDirs).contains(childFile.getName()))
-                                    continue;
-                                FindUselessUtils.loopVirtualDir(ignoreDirs, childFile, findResFiles, new FindUselessUtils.LoopCallback() {
-                                    @Override
-                                    public void callbackUsefulFile(File f, OutPutInfo outPutInfo) {
-                                        if(f != null)
-                                            usefulFiles.add(f);
-//                                        infoOutPutList.addElement(outPutInfo);
-                                    }
-                                });
-                            }
-                        }
-                    }
+                    });
                 }
-
-                FindUselessUtils.loopTextFiles(resTextFiles,findResFiles,new FindUselessUtils.LoopCallback(){
-                    @Override
-                    public void callbackUsefulFile(File f, OutPutInfo outPutInfo) {
-                        usefulFiles.add(f);
-//                        infoOutPutList.addElement(outPutInfo);
-                    }
-                });
-
-
-                infoOutPutList.addElement( new OutPutInfo("*****************查询结束*****************"));
-                infoOutPutList.addElement( new OutPutInfo("*****************以下是未被应用的资源文件*****************"));
-
-
-                findResFiles.removeAll(usefulFiles);
-
-                long fileSize = 0;
-                for (File file : findResFiles) {
-                    StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append("查询到[")
-                            .append(file.getPath())
-                            .append("]")
-                            .append("未被应用")
-                            .append(" 【文件大小:")
-                            .append(FileUtils.formatFileSize(file.length()))
-                            .append("】");
-                    infoOutPutList.addElement(new OutPutInfo(stringBuilder.toString(),file));
-                    fileSize += file.length();
-                }
-
-                StringBuilder info = new StringBuilder();
-                info.append("未被应用资源文件【总计数:");
-                info.append(findResFiles.size());
-                info.append("】");
-                info.append("【总计大小:");
-                info.append(FileUtils.formatFileSize(fileSize));
-                info.append("】");
-                infoOutPutList.addElement(new OutPutInfo(info.toString()));
-
-                deleteAll.setVisible(findResFiles != null && findResFiles.size() > 0);
             }
-        });
-        thread.run();
+
+
+            FindUselessUtils.loopTextFiles(resTextFiles, findResFiles, new FindUselessUtils.LoopCallback() {
+                @Override
+                public void callbackUsefulFile(ResFileInfo f, OutPutInfo outPutInfo) {
+                    if (f != null)
+                        usefulFiles.add(f);
+                }
+            });
+
+            infoOutPutList.addElement(new OutPutInfo("*****************查询结束*****************"));
+            infoOutPutList.addElement(new OutPutInfo("*****************以下是未被应用的资源文件*****************"));
+
+            findResFiles.removeAll(usefulFiles);
+            long fileSize = 0;
+            for (ResFileInfo file : findResFiles) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("查询到[")
+                        .append(file.getResFile().getPath())
+                        .append("]")
+                        .append("未被应用")
+                        .append(" 【文件大小:")
+                        .append(FileUtils.formatFileSize(file.getResFile().length()))
+                        .append("】");
+                infoOutPutList.addElement(new OutPutInfo(stringBuilder.toString(), file.getResFile()));
+                fileSize += file.getResFile().length();
+            }
+
+            StringBuilder info = new StringBuilder();
+            info.append("未被应用资源文件【总计数:");
+            info.append(findResFiles.size());
+            info.append("】");
+            info.append("【总计大小:");
+            info.append(FileUtils.formatFileSize(fileSize));
+            info.append("】");
+            infoOutPutList.addElement(new OutPutInfo(info.toString()));
+            deleteAll.setVisible(findResFiles != null && findResFiles.size() > 0);
+        }
     }
 
 
     private void onOK() {
-        // 获取到忽略目录
-        List<VirtualFile> selectedDirs = rootNode.getCheckParentsNode();
-        infoOutPutList.clear();
-        ignoreDirs.clear();
-        findResFiles.clear();
-        usefulFiles.clear();
-        resTextFiles.clear();
-        // 遍历到的查询文件
-        for (VirtualFile dir : selectedDirs) {
-            ignoreDirs.add(dir.getPath());
-            findResFiles.addAll(FindUselessUtils.findFileRes(new File(dir.getPath()), new FindUselessUtils.LoopFileCallback() {
-                @Override
-                public void callbackFindTextFile(File f) {
-                    resTextFiles.add(f);
+        ApplicationManager.getApplication().runReadAction(new Runnable() {
+            @Override
+            public void run() {
+                // 获取到忽略目录
+                List<VirtualFile> selectedDirs = rootNode.getCheckParentsNode();
+                infoOutPutList.clear();
+                ignoreDirs.clear();
+                findResFiles.clear();
+                usefulFiles.clear();
+                resTextFiles.clear();
+                // 遍历到的查询文件
+                for (VirtualFile dir : selectedDirs) {
+                    ignoreDirs.add(dir.getPath());
+                    findResFiles.addAll(FindUselessUtils.findFileRes(new File(dir.getPath()), new FindUselessUtils.LoopFileCallback() {
+                        @Override
+                        public void callbackFindTextFile(File f) {
+                            resTextFiles.add(f);
+                        }
+                    }));
                 }
-            }));
-        }
-        // 开始查询
-        infoOutPutList.addElement( new OutPutInfo(new StringBuilder().append("*************")
-                .append("开始查询资源文件操作")
-                .append("*************").toString()));
-        long fileSize = 0;
-        for (File file : findResFiles) {
-            fileSize += file.length();
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("[")
-                    .append(file.getPath())
-                    .append("]")
-                    .append("[文件大小: ")
-                    .append(FileUtils.formatFileSize(file.length()))
-                    .append("]");
-            infoOutPutList.addElement( new OutPutInfo(stringBuilder.toString()));
-        }
+                // 开始查询
+                infoOutPutList.addElement(new OutPutInfo(new StringBuilder().append("*************")
+                        .append("开始查询资源文件操作")
+                        .append("*************").toString()));
+                long fileSize = 0;
+                for (ResFileInfo file : findResFiles) {
+                    fileSize += file.getResFile().length();
+                    StringBuilder stringBuilder = new StringBuilder();
+                    stringBuilder.append("[")
+                            .append(file.getResFile().getPath())
+                            .append("]")
+                            .append("[文件大小: ")
+                            .append(FileUtils.formatFileSize(file.getResFile().length()))
+                            .append("]");
+                    infoOutPutList.addElement(new OutPutInfo(stringBuilder.toString()));
+                }
 
-        StringBuilder info = new StringBuilder();
-        info.append("*************");
-        info.append("查询资源结束 ---->>>> 统计结果:[")
-                .append("文件总数:")
-                .append(findResFiles.size())
-                .append("] ")
-                .append("[")
-                .append("文件总大小:")
-                .append(FileUtils.formatFileSize(fileSize))
-                .append("]");
-        info.append("*************");
-        infoOutPutList.addElement( new OutPutInfo(info.toString()));
-        infoOutPutList.addElement( new OutPutInfo("*************"));
-        infoOutPutList.addElement( new OutPutInfo("*************"));
-        loopProjectDir();
+                StringBuilder info = new StringBuilder();
+                info.append("*************");
+                info.append("查询资源结束 ---->>>> 统计结果:[")
+                        .append("文件总数:")
+                        .append(findResFiles.size())
+                        .append("] ")
+                        .append("[")
+                        .append("文件总大小:")
+                        .append(FileUtils.formatFileSize(fileSize))
+                        .append("]");
+                info.append("*************");
+                infoOutPutList.addElement(new OutPutInfo(info.toString()));
+                infoOutPutList.addElement(new OutPutInfo("*************"));
+                infoOutPutList.addElement(new OutPutInfo("*************"));
+
+                loopProjectDir();
+            }
+        });
     }
-
-
 
 
     private void onCancel() {

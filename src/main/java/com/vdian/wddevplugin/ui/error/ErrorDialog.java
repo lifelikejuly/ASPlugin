@@ -35,6 +35,8 @@ public class ErrorDialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        setSize(600, 300);
+        setLocationRelativeTo(null);
     }
 
     private void onOK() {
