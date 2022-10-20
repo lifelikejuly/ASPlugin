@@ -1,0 +1,22 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of '{{fileName}}.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+{{#clsEntities}}
+{{className}} _${{propName}}FromJson(Map<String, dynamic> json) {
+return {{className}}()
+{{#properties}}
+    ..{{propName}} = {{{fromJson}}}
+{{/properties}};
+}
+
+Map<String, dynamic> _${{propName}}ToJson({{className}} instance) => <String, dynamic>{
+{{#properties}}
+    '{{name}}': instance.{{propName}},
+{{/properties}}
+};
+{{/clsEntities}}

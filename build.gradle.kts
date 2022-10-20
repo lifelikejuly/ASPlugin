@@ -4,10 +4,23 @@ plugins {
 }
 
 group = "com.vdian"
-version = "1.0-SNAPSHOT"
+version = "1.0.1-SNAPSHOT"
 
 repositories {
+    mavenLocal()
     mavenCentral()
+    maven {
+        url = uri("https://repo.spring.io/release")
+    }
+    maven {
+        url = uri("https://repository.jboss.org/maven2")
+    }
+    maven {
+        url = uri("https://repository.mulesoft.org/nexus/content/repositories/public/")
+    }
+    maven {
+        url = uri("https://jitpack.io")
+    }
 }
 
 // Configure Gradle IntelliJ Plugin
@@ -16,8 +29,15 @@ intellij {
     version.set("2021.3.3")
     type.set("IC") // Target IDE Platform
 
-    plugins.set(listOf(/* Plugin Dependencies */))
+    plugins.set(listOf(
+        /* Plugin Dependencies */
+
+    ))
 }
+dependencies {
+    implementation("com.github.spullara.mustache.java:compiler:0.9.5")
+}
+
 
 tasks {
     // Set the JVM compatibility versions

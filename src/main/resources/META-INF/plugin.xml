@@ -32,5 +32,8 @@
         <action id="VDFindUselessAction" class="com.vdian.wddevplugin.actions.VDFindUselessAction" text="FindUselessRes" description="test">
             <add-to-group group-id="VDDevToolsGroup" anchor="first"/>
         </action>
+        <action id="VDDartJsonAction" class="com.vdian.wddevplugin.actions.VDDartJsonAction" text="VDDartJsonFormat">
+            <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewDir"/>
+        </action>
     </actions>
 </idea-plugin>
