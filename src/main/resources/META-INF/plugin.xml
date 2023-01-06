@@ -35,5 +35,9 @@
         <action id="VDDartJsonAction" class="com.vdian.wddevplugin.actions.VDDartJsonAction" text="VDDartJsonFormat">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewDir"/>
         </action>
+        <action id="NodeCreateAction" class="com.vdian.wddevplugin.actions.PageNodeCreateAction"
+                text="NodeCreate">
+            <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewDir"/>
+        </action>
     </actions>
 </idea-plugin>

@@ -3,7 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 part '{{fileName}}.g.dart';
 
 {{#clsEntities}}
-{{#isJsonAnnotation}}@JsonSerializable(){{/isJsonAnnotation}}
+@JsonSerializable()
 class {{className}}{
 {{#properties}}
     {{{clsTypeName}}} {{propName}};
