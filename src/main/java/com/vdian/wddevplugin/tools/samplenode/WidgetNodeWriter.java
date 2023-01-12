@@ -17,6 +17,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+
+/**
+ * 组件类生成器
+ */
 public class WidgetNodeWriter extends WriteCommandAction.Simple {
     private Project project;
 

@@ -5,6 +5,8 @@ public class NodeEntity {
     private String fileName;
     private String className;
 
+    private String parentName;
+
     private String dir;
 
     public NodeEntity() {}
@@ -31,5 +33,13 @@ public class NodeEntity {
 
     public void setDir(String dir) {
         this.dir = dir;
+    }
+
+    public String getParentName() {
+        return parentName;
+    }
+
+    public void setParentName(String parentName) {
+        this.parentName = parentName;
     }
 }

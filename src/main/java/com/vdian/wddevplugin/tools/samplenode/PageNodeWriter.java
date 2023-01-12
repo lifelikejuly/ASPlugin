@@ -17,6 +17,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/**
+ * 页面类生成器
+ */
 public class PageNodeWriter extends WriteCommandAction.Simple {
     private Project project;
 

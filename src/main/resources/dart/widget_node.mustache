@@ -1,5 +1,6 @@
 import 'package:flutter_demo_plus/base/base.dart';
 
+@WidgetNode("{{parentName}}")
 class {{className}} extends AbsWidgetNode {
 
   @override
@@ -8,7 +9,7 @@ class {{className}} extends AbsWidgetNode {
   }
 
   @override
-  Widget layout() {
+  Widget layout(context) {
     return SizedBox();
   }
 }

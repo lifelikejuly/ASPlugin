@@ -12,6 +12,12 @@ import com.vdian.wddevplugin.utils.ClsUtils;
 import javax.swing.*;
 import java.awt.event.*;
 
+/**
+ * 创建Node模版工具
+ *
+ * Node模板是Flutter项目的基础类
+ * 用于实现每个组件功能和其他widget的快捷工具
+ */
 public class NodeDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
@@ -19,6 +25,7 @@ public class NodeDialog extends JDialog {
     private JTextField textField1;
     private JRadioButton pageNodeRadioButton;
     private JRadioButton widgetNodeRadioButton;
+    private JTextField textField2;
 
 
     private PsiDirectory parentFolder;
@@ -84,6 +91,9 @@ public class NodeDialog extends JDialog {
         if(pageNodeRadioButton.isSelected()){
             createPageNode();
         }else{
+            if (textField2.getText() == null || "".equals(textField2.getText().trim())) {
+                return;
+            }
             createWidgetNode();
         }
         dispose();
@@ -119,7 +129,7 @@ public class NodeDialog extends JDialog {
         WriteCommandAction.runWriteCommandAction(project, () -> {
             try {
                 String fileName = this.textField1.getText().trim();
-
+                String parentName = this.textField2.getText().trim();
                 String prefix = textField1.getText().replaceAll("[A-Z]", "_$0").toLowerCase();
                 if(prefix.startsWith("_")){
                     prefix = prefix.substring(1);
@@ -129,6 +139,7 @@ public class NodeDialog extends JDialog {
                 NodeEntity nodeEntity = new NodeEntity();
                 nodeEntity.setClassName(fileName);
                 nodeEntity.setFileName(prefix);
+                nodeEntity.setParentName(parentName);
                 ClsUtils clsUtils = new ClsUtils();
                 nodeEntity.setDir(clsUtils.getClsDir(dartFile));
                 WidgetNodeWriter widgetNodeWriter = new WidgetNodeWriter(project, nodeEntity,dartFile);
