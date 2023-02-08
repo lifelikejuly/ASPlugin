@@ -1,1 +1,1 @@
-rootProject.name = "WDDevPlugin"
+rootProject.name = "JulyASPlugins"
