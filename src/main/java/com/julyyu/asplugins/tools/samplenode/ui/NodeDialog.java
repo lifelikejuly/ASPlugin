@@ -142,8 +142,10 @@ public class NodeDialog extends JDialog {
                 nodeEntity.setParentName(parentName);
                 ClsUtils clsUtils = new ClsUtils();
                 nodeEntity.setDir(clsUtils.getClsDir(dartFile));
+
                 WidgetNodeWriter widgetNodeWriter = new WidgetNodeWriter(project, nodeEntity,dartFile);
                 widgetNodeWriter.start();
+
                 dispose();
             } catch (Exception exception) {
 //                showTip("Json text format error");

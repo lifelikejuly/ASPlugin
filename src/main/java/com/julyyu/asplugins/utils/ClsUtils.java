@@ -16,11 +16,8 @@ import java.util.Set;
  */
 public class ClsUtils {
     private Gson gson;
-    private JsonParser jsonParser;
-
     public ClsUtils() {
         gson = new GsonBuilder().setPrettyPrinting().create();
-        jsonParser = new JsonParser();
     }
 
     public MustacheEntity jsonElementToMustacheEntity(String fileName, String jsonText) {
@@ -123,7 +120,7 @@ public class ClsUtils {
         if (TextUtils.isEmpty(jsonText)) {
             return null;
         }
-        return jsonParser.parse(jsonText);
+        return JsonParser.parseString(jsonText);
     }
 
     public String toJsonText(JsonElement jsonElement) {

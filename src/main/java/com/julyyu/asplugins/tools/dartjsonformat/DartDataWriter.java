@@ -6,6 +6,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.ThrowableRunnable;
 import com.julyyu.asplugins.tools.dartjsonformat.model.MustacheEntity;
 import com.julyyu.asplugins.utils.ClsUtils;
 import com.julyyu.asplugins.utils.MustacheUtils;
@@ -15,20 +16,22 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author shiki
  */
-public class DartDataWriter extends WriteCommandAction.Simple {
+public class DartDataWriter {
     private Project project;
     private MustacheEntity mustacheEntity;
     private ClsUtils clsUtils;
     private MustacheUtils.GenDartFileListener genDartFileListener;
     private PsiFile file;
 
+    private  WriteCommandAction.Builder builder;
     public DartDataWriter(Project project, ClsUtils clsUtils, MustacheEntity mustacheEntity, PsiFile file) {
-        super(project, file);
         this.project = project;
         this.mustacheEntity = mustacheEntity;
         this.clsUtils = clsUtils;
 
         this.file = file;
+        builder = WriteCommandAction.writeCommandAction(project,file);
+
     }
 
     public void start() {
@@ -38,7 +41,18 @@ public class DartDataWriter extends WriteCommandAction.Simple {
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 try {
                     progressIndicator.setIndeterminate(true);
-                    execute();
+                    try {
+                        builder.run(new ThrowableRunnable<Throwable>() {
+                            @Override
+                            public void run() throws Throwable {
+                                mustacheEntity.setDir(clsUtils.getClsDir(file));
+                                MustacheUtils.genDartFile(mustacheEntity, genDartFileListener);
+                                file.getParent().getVirtualFile().refresh(true, true);
+                            }
+                        });
+                    } catch (Throwable e) {
+                        throw new RuntimeException(e);
+                    }
                     progressIndicator.setIndeterminate(false);
                     progressIndicator.setFraction(1.0);
                 } catch (Exception e) {
@@ -49,12 +63,12 @@ public class DartDataWriter extends WriteCommandAction.Simple {
         });
     }
 
-    @Override
-    protected void run() throws Throwable {
-        mustacheEntity.setDir(clsUtils.getClsDir(file));
-        MustacheUtils.genDartFile(mustacheEntity, genDartFileListener);
-        file.getParent().getVirtualFile().refresh(true, true);
-    }
+//    @Override
+//    protected void run() throws Throwable {
+//        mustacheEntity.setDir(clsUtils.getClsDir(file));
+//        MustacheUtils.genDartFile(mustacheEntity, genDartFileListener);
+//        file.getParent().getVirtualFile().refresh(true, true);
+//    }
 
     public MustacheUtils.GenDartFileListener getGenDartFileListener() {
         return genDartFileListener;

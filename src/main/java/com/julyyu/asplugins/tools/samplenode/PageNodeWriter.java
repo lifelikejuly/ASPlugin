@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.ThrowableRunnable;
 import com.julyyu.asplugins.utils.MustacheUtils;
 import com.julyyu.asplugins.tools.samplenode.model.NodeEntity;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +21,7 @@ import java.io.PrintWriter;
 /**
  * 页面类生成器
  */
-public class PageNodeWriter extends WriteCommandAction.Simple {
+public class PageNodeWriter {
     private Project project;
 
     private NodeEntity nodeEntity;
@@ -28,11 +29,13 @@ public class PageNodeWriter extends WriteCommandAction.Simple {
     private PsiFile psiFile;
     private MustacheUtils.GenDartFileListener genDartFileListener;
 
+    private WriteCommandAction.Builder builder;
+
     public PageNodeWriter(Project project, NodeEntity nodeEntity, PsiFile file) {
-        super(project, file);
         this.project = project;
         this.nodeEntity = nodeEntity;
         this.psiFile = file;
+        builder = WriteCommandAction.writeCommandAction(project, file);
     }
 
 
@@ -43,10 +46,37 @@ public class PageNodeWriter extends WriteCommandAction.Simple {
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 try {
                     progressIndicator.setIndeterminate(true);
-                    execute();
+                    builder.run(new ThrowableRunnable<Throwable>() {
+                        @Override
+                        public void run() throws Throwable {
+                            MustacheFactory mf = new DefaultMustacheFactory();
+                            Mustache mustache = mf.compile("dart/page_node.mustache");
+                            String path = nodeEntity.getDir() + "/" + nodeEntity.getFileName();
+                            File file = new File(path);
+                            if (!file.getParentFile().exists()) {
+                                file.mkdirs();
+                            }
+                            try {
+                                file = new File(path);
+                                mustache.execute(new PrintWriter(file), nodeEntity).flush();
+                                if (genDartFileListener != null) {
+                                    genDartFileListener.genDartFileResult(true);
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                if (genDartFileListener != null) {
+                                    genDartFileListener.genDartFileResult(false);
+                                }
+                            }
+                            psiFile.getParent().getVirtualFile().refresh(true, true);
+                        }
+                    });
                     progressIndicator.setIndeterminate(false);
                     progressIndicator.setFraction(1.0);
                 } catch (Exception e) {
+                    progressIndicator.setIndeterminate(false);
+                    progressIndicator.setFraction(1.0);
+                } catch (Throwable e) {
                     progressIndicator.setIndeterminate(false);
                     progressIndicator.setFraction(1.0);
                 }
@@ -62,27 +92,5 @@ public class PageNodeWriter extends WriteCommandAction.Simple {
         this.genDartFileListener = genDartFileListener;
     }
 
-    @Override
-    protected void run() throws Throwable {
-        MustacheFactory mf = new DefaultMustacheFactory();
-        Mustache mustache = mf.compile("dart/page_node.mustache");
-        String path = nodeEntity.getDir() + "/" + nodeEntity.getFileName();
-        File file = new File(path);
-        if (!file.getParentFile().exists()) {
-            file.mkdirs();
-        }
-        try {
-            file = new File(path);
-            mustache.execute(new PrintWriter(file), nodeEntity).flush();
-            if (genDartFileListener != null) {
-                genDartFileListener.genDartFileResult(true);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            if (genDartFileListener != null) {
-                genDartFileListener.genDartFileResult(false);
-            }
-        }
-        psiFile.getParent().getVirtualFile().refresh(true, true);
-    }
+
 }
