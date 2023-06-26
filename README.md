@@ -1,4 +1,5 @@
-# JulyASTools[Marketplace](https://plugins.jetbrains.com/plugin/21018-julyastools)
+# JulyASTools
+[Marketplace](https://plugins.jetbrains.com/plugin/21018-julyastools)
 
 
 ## 学习参考
